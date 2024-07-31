@@ -1,0 +1,11 @@
+toollib==1.5.8
+docker_py==1.10.6
+fastapi==0.111.1
+GitPython==3.1.43
+pydantic==2.8.2
+PyGithub==2.3.0
+Requests==2.32.3
+SQLAlchemy==2.0.31
+toollib==1.5.8
+uvicorn==0.30.3
+PyMySQL==1.1.1
