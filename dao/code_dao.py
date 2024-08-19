@@ -1,4 +1,5 @@
 import logging
+import os
 from sqlalchemy import create_engine,exc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import reflection
@@ -8,15 +9,21 @@ from toollib.guid import SnowFlake
 
 class Code_DAO:
     def __init__(self, config:config) -> None:
+        HOST = os.getenv("IMAGE_BUILDER_DATABASE_SERVICE_HOST", None)
+        if HOST is None:
+            HOST = config.read("mysql", "host")
+        PORT = os.getenv("IMAGE_BUILDER_DATABASE_SERVICE_PORT", None)
+        if PORT is None:
+            PORT = config.read("mysql", "port")
         DATABASE_URL = """mysql+pymysql://{}:{}@{}:{}/{}?connect_timeout=10""".format(
                             config.read("mysql", "user"),
                             config.read("mysql", "password"),
-                            config.read("mysql", "host"),
-                            config.read("mysql", "port"),
+                            HOST,
+                            PORT,
                             config.read("mysql", "db_name"))
         self.logger = logging.getLogger(__name__)
         self.engine = create_engine(DATABASE_URL, echo = True, pool_pre_ping = True, pool_recycle = -1)
-        #logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)  # 设置日志级别为 INFO 或 DEBUG
+        #logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO) 
         
         if not reflection.Inspector.from_engine(self.engine).has_table(Code_TBL.__tablename__):
             Base.metadata.create_all(self.engine)

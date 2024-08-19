@@ -1,0 +1,47 @@
+{{- with .Values.persistentVolumeClaims.database }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "image_builder_application.fullname" $ }}-database
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+  {{- range $key, $value := .annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    component: {{ include "image_builder_application.fullname" $ }}-database
+    app.kubernetes.io/component: {{ include "image_builder_application.fullname" $ }}-database
+spec:
+  accessModes: 
+    - {{ .accessMode }}
+  resources:
+    requests:
+      storage: {{ .size }}
+  storageClassName: {{ .storageClass }}
+  volumeName: local-database
+{{- end }}
+
+{{- with .Values.persistentVolumeClaims.imageRegistry }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "image_builder_application.fullname" $ }}-image-registry
+  namespace: {{ $.Release.Namespace | quote }}
+  annotations:
+  {{- range $key, $value := $.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  labels:
+    component: {{ include "image_builder_application.fullname" $ }}-image-registry
+    app.kubernetes.io/component: {{ include "image_builder_application.fullname" $ }}-image-registry
+spec:
+  accessModes: 
+    - {{ .accessMode }}
+  resources:
+    requests:
+      storage: {{ .size }}
+  storageClassName: {{ .storageClass }}
+  volumeName: local-app
+{{- end }}

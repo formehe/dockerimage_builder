@@ -110,7 +110,7 @@ class github_service:
     #         if content.type == 'dir':
     #             # If it's a directory, get the contents and process them recursively
     #             new_contents = repo.get_contents(content.path, ref=ref)
-    #             contents.extend(new_contents)                
+    #             contents.extend(new_contents)
     #         else:
     #             # It's a file, download it
     #             download_tasks.append((content, dir))

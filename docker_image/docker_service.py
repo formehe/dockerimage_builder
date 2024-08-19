@@ -33,7 +33,7 @@ class docker_service:
                 rm = True,
                 forcerm = True,
                 decode = True,
-                timeout = 60)
+                timeout = 120)
                         
             for chunk in build_generator:
                 if 'stream' in chunk:
@@ -132,10 +132,11 @@ class docker_service:
         # 获取当前时间
         # 获取当前时间（UTC）
         now = datetime.now(timezone.utc)
-        one_hour_ago = now - timedelta(hours = 1)
+        one_hour_ago = now - timedelta(hours = 24)
         # 获取所有镜像
         images = self.client.images.list()
         for image in images:
+            self.logger.debug(f"image id:{image.id}, tag is:{image.tags}")
             try:
                 if not image.tags:
                     created = parser.parse(image.attrs['Created'])

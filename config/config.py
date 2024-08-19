@@ -13,12 +13,12 @@ class config:
             if os.path.isfile(path):
                 self.config.read(path)
             else:
-                self.logger("file is not exist.")
+                self.logger.error("file is not exist.")
         except Exception as e:
-            self.logger(f"{path} is not exist.")
+            self.logger.error(f"{path} is not exist.")
     
     def read(self, module_name, key):
         try:
             return self.config[module_name][key]
         except Exception as e:
-            self.logger(f"{key} of {module_name} is not exist.")
+            self.logger.error(f"{key} of {module_name} is not exist.")

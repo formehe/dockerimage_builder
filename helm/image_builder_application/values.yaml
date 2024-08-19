@@ -1,0 +1,185 @@
+# Default values for image_builder_application.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: forme628/dockerimage_builder
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "1.0"
+
+imagePullSecrets: []
+nameOverride: "image-builder"
+fullnameOverride: "image-builder"
+ingress: {}
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+services: 
+  database:
+    type: ClusterIP
+    port: 3306
+  
+  image_builder:
+    type: ClusterIP
+    port: 80
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: 
+  privileged: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes: 
+  - name: secrets
+    secret:
+      secretName: image-builder-secret
+      items:
+      - key: config.ini
+        path: config.ini
+  - name: images
+    persistentVolumeClaim: 
+      claimName: image-builder-image-registry
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts:
+  - name: images
+    mountPath: /var/lib/docker/
+  - name: secrets
+    mountPath: /etc/config/
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+###
+# ```{rubric} Local
+# ```
+# ---
+# This defines the default local storage.
+local:
+  ###
+  # This is the default storage class.
+  default: true
+  ###
+  # It uses the name `local`.
+  name: local
+  ###
+  # It uses the local provisioner.
+  provisioner: local
+  ###
+  # The storage is solid-state.
+  type: ssd
+
+persistentVolumes:
+  localApp:
+    capacity: 20Gi
+    hostname: k8snode3
+    type: ssd
+    storageClass: local
+    mountDir: /mnt/data_app
+  localDatabase:
+    capacity: 20Gi
+    hostname: k8snode3
+    type: ssd
+    storageClass: local
+    mountDir: /mnt/data_database
+
+persistentVolumeClaims:
+  database:
+    # Use the existing PVC which must be created manually before bound,
+    # and specify the "subPath" if the PVC is shared with other components
+    existingClaim: ""
+    # Specify the "storageClass" used to provision the volume. Or the default
+    # StorageClass will be used (the default).
+    # Set it to "-" to disable dynamic provisioning
+    storageClass: "local"
+    subPath: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    annotations: {}
+  imageRegistry:
+    # Use the existing PVC which must be created manually before bound,
+    # and specify the "subPath" if the PVC is shared with other components
+    existingClaim: ""
+    # Specify the "storageClass" used to provision the volume. Or the default
+    # StorageClass will be used (the default).
+    # Set it to "-" to disable dynamic provisioning
+    storageClass: "local"
+    subPath: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    annotations: {}
+
+nodeLabels: {}
+labelsForPV: {}
+secretLabels: {}
+minResyncPeriod: 30
+classes:
+  - name:
+    hostDir:
+    mountDir:
+    blockCleanerCommand:
+    volumeMode:
+    fsType:
+    namePattern:
+
+secrets:
+  secretAnnotations: {}
+
+dbInfo:
+  passwd: 123456
+  user: root
+
+github:
+  token: 

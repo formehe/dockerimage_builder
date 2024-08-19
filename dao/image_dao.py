@@ -1,4 +1,5 @@
 import logging
+import os
 from sqlalchemy import create_engine,exc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import reflection
@@ -8,11 +9,17 @@ from toollib.guid import SnowFlake
 
 class Image_DAO:
     def __init__(self, config:config) -> None:
+        HOST = os.getenv("IMAGE_BUILDER_DATABASE_SERVICE_HOST", None)
+        if HOST is None:
+            HOST = config.read("mysql", "host")
+        PORT = os.getenv("IMAGE_BUILDER_DATABASE_SERVICE_PORT", None)
+        if PORT is None:
+            PORT = config.read("mysql", "port")
         DATABASE_URL = """mysql+pymysql://{}:{}@{}:{}/{}?connect_timeout=10""".format(
                             config.read("mysql", "user"),
                             config.read("mysql", "password"),
-                            config.read("mysql", "host"),
-                            config.read("mysql", "port"),
+                            HOST,
+                            PORT,
                             config.read("mysql", "db_name"))
         self.logger = logging.getLogger(__name__)
         self.engine = create_engine(DATABASE_URL, echo = True, pool_pre_ping = True, pool_recycle = -1)
@@ -25,9 +32,9 @@ class Image_DAO:
 
     def add_image(self, repo, tag, refer_sha, build_param, build_info):
         try:
-            existing_record = self.session.query(Image_TBL).filter(Image_TBL.repo == repo and Image_DAO.tag == tag).first()
+            existing_record = self.session.query(Image_TBL).filter(Image_TBL.repo == repo, Image_TBL.tag == tag).first()
             if not existing_record:
-                new_content = Image_TBL(id = self.generator.gen_uid(), repo=repo, tag=tag, refer_sha=refer_sha, build_param= build_param, build_info=build_info)
+                new_content = Image_TBL(id = self.generator.gen_uid(), repo = repo, tag = tag, refer_sha = refer_sha, build_param = build_param, build_info=build_info)
                 self.session.add(new_content)
                 self.session.commit()
             return True
@@ -40,7 +47,7 @@ class Image_DAO:
 
     def get_image(self, repo, tag):
         try:
-            return self.session.query(Image_TBL).filter(Image_TBL.repo == repo,Image_DAO.tag == tag).first()
+            return self.session.query(Image_TBL).filter(Image_TBL.repo == repo, Image_TBL.tag == tag).first()
         except exc.OperationalError as e:
             self.logger.error("fail to get image:", e)
             self.engine.dispose()  # 释放连接

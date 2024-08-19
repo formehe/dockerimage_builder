@@ -1,0 +1,53 @@
+{{- with .Values.local }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "image_builder_application.fullname" $ }}-database
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "image_builder_application.fullname" $ }}-database
+  template:
+    metadata:
+      labels:
+        app: {{ include "image_builder_application.fullname" $ }}-database
+        {{- include "image_builder_application.labels" $ | nindent 8 }}
+    spec:
+      containers:
+      - image: mysql:5.7.9
+        name: mysql
+        env:
+          # 在实际中使用 secret
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "image_builder_application.fullname" $ }}-secret
+              key: dbPasswd
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+        - name: mysql-init
+          mountPath: /docker-entrypoint-initdb.d
+        - name: mysql-config
+          mountPath: /etc/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: {{ include "image_builder_application.fullname" $ }}-database
+      - name: mysql-init
+        configMap:
+          name: {{ include "image_builder_application.fullname" $ }}-database-config
+          items:
+          - key: init.sql
+            path: init.sql
+      - name: mysql-config
+        configMap:
+          name: {{ include "image_builder_application.fullname" $ }}-database-config
+          items:
+          - key: my.cnf
+            path: my.cnf
+{{- end }}

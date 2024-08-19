@@ -1,0 +1,65 @@
+{{- with .Values.persistentVolumes.localApp }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-app
+  annotations:
+    kubernetes.io.storage/class: local
+spec:
+  capacity:
+    storage: {{ .capacity }}
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .storageClass }}
+  claimRef:
+    namespace: {{ $.Release.Namespace | quote }}
+    name: {{ include "image_builder_application.fullname" $ }}-image-registry
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+  local:
+    path: {{ .mountDir }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .hostname }}
+{{- end }}
+
+{{- with .Values.persistentVolumes.localDatabase }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-database
+  annotations:
+    kubernetes.io.storage/class: local
+spec:
+  capacity:
+    storage: {{ .capacity }}
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .storageClass }}
+  claimRef:
+    namespace: {{ $.Release.Namespace | quote }}
+    name: {{ include "image_builder_application.fullname" $ }}-database
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+  local:
+    path: {{ .mountDir }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .hostname }}
+{{- end }}

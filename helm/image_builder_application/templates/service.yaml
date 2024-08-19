@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "image_builder_application.fullname" . }}-database
+  labels:
+    {{- include "image_builder_application.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.database.type }}
+  ports:
+    - port: {{ .Values.services.database.port }}
+  selector:
+    {{- include "image_builder_application.selectorLabels" . | nindent 4 }}
+    app: {{ include "image_builder_application.fullname" . }}-database
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "image_builder_application.fullname" . }}-app
+  labels:
+    {{- include "image_builder_application.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.image_builder.type }}
+  ports:
+    - port: {{ .Values.services.image_builder.port }}
+      targetPort: 9001
+      protocol: TCP
+  selector:
+    {{- include "image_builder_application.selectorLabels" . | nindent 4 }}
+    app: {{ include "image_builder_application.fullname" . }}-app

@@ -4,6 +4,7 @@ from typing import Dict
 from pydantic import BaseModel
 from uuid import uuid4
 import argparse
+import logging
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import JSONResponse
 import uvicorn
@@ -32,6 +33,7 @@ class image_build_publish_info(BaseModel):
     image_args: Dict[str, str]
 
 def build_and_publish(info: image_build_publish_info, task_id: str):
+    logger.info(f"run task:{task_id}, code:{info.code_repo_owner_name}:{info.code_repo_name}, image:{info.image_repo.lower()}:{info.image_tag.lower()}")
     tasks[task_id]['name']  = f'{info.image_repo.lower()}:{info.image_tag.lower()}'
     tasks[task_id]['stage'] = "downloading"
     location, sha = git_srv.clone(info.code_repo_owner_name, info.code_repo_name,  info.code_ref)
@@ -47,6 +49,7 @@ def build_and_publish(info: image_build_publish_info, task_id: str):
         tasks[task_id]['stage'] = "failed publish"
         return False
     tasks[task_id]['stage'] = "completed"
+    logger.info(f"finish task:{task_id}")
     return True
 
 tasks = {}
@@ -57,6 +60,7 @@ def update_task_status(task_id: str, key:str, value: str):
 @app.post("/run-task")
 async def run_task(info: image_build_publish_info, background_tasks: BackgroundTasks):
     task_id = str(uuid4())
+    
     tasks[task_id]= {
         'name': f'{info.image_repo.lower()}:{info.image_tag.lower()}', 
         'stage':'beginning', 
@@ -83,10 +87,10 @@ async def get_code(owner: str, repo: str, ref: str):
         return code_detail.as_dict() 
     return None
 
-def clean_images():
+def recycle():
     while True:
         docker_srv.clean()
-        time.sleep(3600)
+        time.sleep(86400)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='启动参数')
@@ -99,6 +103,8 @@ if __name__ == "__main__":
         help='配置路径位置'
     )
     
+    logger = logging.getLogger(__name__)
+    
     # 解析命令行参数
     args = parser.parse_args()
     config = config(args.config)
@@ -110,7 +116,7 @@ if __name__ == "__main__":
     logfile(log_dir)
     
     # 创建后台线程来执行清理任务
-    cleaning_thread = threading.Thread(target=clean_images)
+    cleaning_thread = threading.Thread(target=recycle)
     cleaning_thread.daemon = True
     cleaning_thread.start()
     
